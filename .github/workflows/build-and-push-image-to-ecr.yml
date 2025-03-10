@@ -68,7 +68,7 @@ jobs:
         echo "Extracted TAG: $TAG"
 
     - name: Trigger update service 
-      uses: peter-evans/repository-dispatch@v2
+      uses: peter-evans/repository-dispatch@v3
       with:
         token: ${{ secrets.GH_ACCESS_TOKEN }}
         repository: "ip812/apps"
