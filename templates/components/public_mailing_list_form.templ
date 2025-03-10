@@ -1,0 +1,38 @@
+package components
+
+import "github.com/ip812/go-template/templates"
+
+type PublicMailingListFormInput struct {
+	Email string `validate:"required,email"`
+}
+
+templ PublicMailingListForm(input PublicMailingListFormInput) {
+	<form
+		hx-post="/api/public/v0/mailing-list"
+		hx-target="#mailing-list-form"
+		hx-swap="innerHTML"
+		class="flex flex-col items-center w-full max-w-md p-6 bg-base-100"
+	>
+		<h2 class="text-lg font-bold text-center text-primary mb-6">
+			Join Our Mailing List
+		</h2>
+		<div class="flex w-full gap-3">
+			<input
+				id="public-mailing-list-form-email"
+				type="email"
+				name="Email"
+				value={ input.Email }
+				placeholder="your.email@gmail.com"
+				class="input input-bordered w-full focus:input-primary"
+			/>
+			<button
+				type="submit"
+				class="btn btn-primary flex items-center justify-center text-slate-100"
+			>
+				@templates.Spinner() {
+					<span>Submit</span>
+				}
+			</button>
+		</div>
+	</form>
+}

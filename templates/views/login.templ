@@ -1,0 +1,19 @@
+package views
+
+import (
+	"github.com/ip812/go-template/templates"
+	"github.com/ip812/go-template/templates/components"
+)
+
+templ Login() {
+	@templates.Base() {
+		<div class="flex flex-col w-full h-screen">
+			<div class="flex flex-col justify-center items-center w-full h-full">
+				@templates.SmallLogo()
+				<div class="w-1/2">
+					@components.LoginForm(components.LoginFormInput{}, make(map[string]string))
+				</div>
+			</div>
+		</div>
+	}
+}
