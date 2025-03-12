@@ -26,6 +26,9 @@ func main() {
 	cfg := NewConfig()
 
 	snowflake.SetMachineID(1)
+	// https://snowsta.mp
+	snowflake.SetStartTime(time.Date(2015, 1, 1, 0, 0, 0, 0, time.UTC))
+
 	dbUrl := fmt.Sprintf(
 		"postgres://%s:%s@%s:%s/%s?sslmode=%s",
 		cfg.Database.Username,
