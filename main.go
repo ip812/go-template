@@ -37,7 +37,7 @@ func main() {
 	)
 	db, err := sql.Open("postgres", dbUrl)
 	if err != nil {
-		panic(err)
+		logger.Error("failed to connect to database: %s", err.Error())
 	}
 	defer db.Close()
 	queries := database.New(db)
