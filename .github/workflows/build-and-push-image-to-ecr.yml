@@ -76,6 +76,7 @@ jobs:
         client-payload: |
           {
             "image_name": "678468774710.dkr.ecr.eu-central-1.amazonaws.com/ip812/go-template",
-            "image_tag": "${{ env.TAG }}"
+            "image_tag": "${{ env.TAG }}",
+            "commit_url": "https://github.com/${{ github.repository }}/commit/${{ github.sha }}"
           }
 
