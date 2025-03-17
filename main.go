@@ -30,13 +30,12 @@ func main() {
 	snowflake.SetStartTime(time.Date(2015, 1, 1, 0, 0, 0, 0, time.UTC))
 
 	dbUrl := fmt.Sprintf(
-		"postgres://%s:%s@%s:%s/%s?sslmode=%s",
+		"postgres://%s:%s@%s/%s?sslmode=%s",
 		cfg.Database.Username,
 		cfg.Database.Password,
-		cfg.Database.Host,
-		cfg.Database.Port,
+		cfg.Database.Endpoint,
 		cfg.Database.Name,
-		cfg.Database.SSL,
+		cfg.Database.SSLMode,
 	)
 	db, err := sql.Open("postgres", dbUrl)
 	if err != nil {

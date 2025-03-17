@@ -15,9 +15,9 @@ type Config struct {
 
 	Database struct {
 		Name     string
-		Host     string
+		Endpoint string
 		Port     string
-		SSL      string
+		SSLMode  string
 		Username string
 		Password string
 	}
@@ -41,9 +41,8 @@ func NewConfig() *Config {
 		cfg.App.Domain = os.Getenv("APP_DOMAIN")
 		cfg.App.Port = os.Getenv("APP_PORT")
 		cfg.Database.Name = os.Getenv("DB_NAME")
-		cfg.Database.Host = os.Getenv("DB_HOST")
-		cfg.Database.Port = os.Getenv("DB_PORT")
-		cfg.Database.SSL = os.Getenv("DB_SSL")
+		cfg.Database.Endpoint = os.Getenv("DB_ENDPOINT")
+		cfg.Database.SSLMode = os.Getenv("DB_SSL_MODE")
 		cfg.Database.Username = os.Getenv("DB_USERNAME")
 		cfg.Database.Password = os.Getenv("DB_PASSWORD")
 		cfg.AWS.Region = os.Getenv("AWS_REGION")
@@ -53,9 +52,8 @@ func NewConfig() *Config {
 		cfg.App.Domain = getSecretFromDockerSwarm("go_template_domain")
 		cfg.App.Port = getSecretFromDockerSwarm("go_template_port")
 		cfg.Database.Name = getSecretFromDockerSwarm("go_template_db_name")
-		cfg.Database.Host = getSecretFromDockerSwarm("go_template_db_host")
-		cfg.Database.Port = getSecretFromDockerSwarm("go_template_db_port")
-		cfg.Database.SSL = getSecretFromDockerSwarm("go_template_db_ssl")
+		cfg.Database.Endpoint = getSecretFromDockerSwarm("go_template_db_endpoint")
+		cfg.Database.SSLMode = getSecretFromDockerSwarm("go_template_db_ssl_mode")
 		cfg.Database.Username = getSecretFromDockerSwarm("go_template_db_username")
 		cfg.Database.Password = getSecretFromDockerSwarm("go_template_db_password")
 		cfg.AWS.Region = getSecretFromDockerSwarm("go_template_aws_region")
