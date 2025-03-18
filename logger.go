@@ -2,7 +2,10 @@ package main
 
 import (
 	"fmt"
-	"log"
+	"os"
+	"time"
+
+	"github.com/rs/zerolog"
 )
 
 type Logger interface {
@@ -13,46 +16,67 @@ type Logger interface {
 }
 
 func NewLogger() Logger {
+	var log zerolog.Logger
 	if Profile == "local" {
-		return &LoggerLocal{}
+		log = zerolog.New(zerolog.ConsoleWriter{
+			Out:        os.Stdout,
+			TimeFormat: time.RFC3339,
+		}).With().Timestamp().Logger().Level(zerolog.InfoLevel)
+		zerolog.SetGlobalLevel(zerolog.DebugLevel)
+		zerolog.TimeFieldFormat = time.RFC3339
+		zerolog.TimestampFunc = time.Now().UTC
+		return &LoggerLocal{
+			Log: &log,
+		}
 	}
-	return &LoggerProd{}
+
+	log = zerolog.New(os.Stdout).With().Timestamp().Logger()
+	zerolog.SetGlobalLevel(zerolog.DebugLevel)
+	zerolog.TimeFieldFormat = time.RFC3339
+	zerolog.TimestampFunc = time.Now().UTC
+	return &LoggerProd{
+		Log: &log,
+	}
 }
 
-// Logger implementation for local development
-type LoggerLocal struct{}
+// Logger implementation for local development (plain text)
+type LoggerLocal struct {
+	Log *zerolog.Logger
+}
 
 func (l *LoggerLocal) Debug(msg string, args ...interface{}) {
-	log.Println("DEBUG: " + fmt.Sprintf(msg, args...))
+	l.Log.Debug().Msg(fmt.Sprintf(msg, args...))
 }
 
 func (l *LoggerLocal) Info(msg string, args ...interface{}) {
-	log.Println("INFO: " + fmt.Sprintf(msg, args...))
+	l.Log.Info().Msg(fmt.Sprintf(msg, args...))
 }
 
 func (l *LoggerLocal) Warn(msg string, args ...interface{}) {
-	log.Println("WARN: " + fmt.Sprintf(msg, args...))
+	l.Log.Warn().Msg(fmt.Sprintf(msg, args...))
 }
 
 func (l *LoggerLocal) Error(msg string, args ...interface{}) {
-	log.Println("ERROR: " + fmt.Sprintf(msg, args...))
+	l.Log.Error().Msg(fmt.Sprintf(msg, args...))
 }
 
-// Logger implementation for prod (send logs to AWS Cloudwatch)
-type LoggerProd struct{}
+// Logger implementation for prod (json)
+type LoggerProd struct {
+	Log *zerolog.Logger
+}
 
 func (l *LoggerProd) Debug(msg string, args ...interface{}) {
-	log.Println("DEBUG: " + fmt.Sprintf(msg, args...))
+	l.Log.Debug().Msg(fmt.Sprintf(msg, args...))
 }
 
 func (l *LoggerProd) Info(msg string, args ...interface{}) {
-	log.Println("INFO: " + fmt.Sprintf(msg, args...))
+	l.Log.Info().Msg(fmt.Sprintf(msg, args...))
 }
 
 func (l *LoggerProd) Warn(msg string, args ...interface{}) {
-	log.Println("WARN " + fmt.Sprintf(msg, args...))
+	l.Log.Warn().Msg(fmt.Sprintf(msg, args...))
 }
 
 func (l *LoggerProd) Error(msg string, args ...interface{}) {
-	log.Println("ERROR: " + fmt.Sprintf(msg, args...))
+	l.Log.Error().Msg(fmt.Sprintf(msg, args...))
 }
