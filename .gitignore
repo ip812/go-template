@@ -33,7 +33,7 @@ bin/main
 tmp/
 
 # Generated files
-# vendor/
+vendor/
 database/
 *_templ.go
 *_templ.txt
