@@ -1,8 +1,6 @@
-FROM golang:1.24.1 AS build-stage
+FROM 678468774710.dkr.ecr.eu-central-1.amazonaws.com/ip812/go-ssr:20250321 AS build-stage
 WORKDIR /app
 COPY . .
-RUN go install github.com/sqlc-dev/sqlc/cmd/sqlc@v1.27.0
-RUN go install github.com/a-h/templ/cmd/templ@v0.3.833
 RUN ./bin/tailwindcss-extra-linux-x64 -i ./static/css/input.css -o ./static/css/output.css --minify
 RUN sqlc generate
 RUN templ generate
