@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"database/sql"
 	"embed"
 	"errors"
@@ -10,7 +9,9 @@ import (
 	"github.com/go-playground/form"
 	"github.com/go-playground/validator/v10"
 	"github.com/godruoyi/go-snowflake"
+	"github.com/ip812/go-template/config"
 	"github.com/ip812/go-template/database"
+	"github.com/ip812/go-template/logger"
 	"github.com/ip812/go-template/templates/components"
 	"github.com/ip812/go-template/templates/views"
 	"github.com/lib/pq"
@@ -20,19 +21,21 @@ import (
 var staticFS embed.FS
 
 type Handler struct {
+	config        *config.Config
 	formDecoder   *form.Decoder
 	formValidator *validator.Validate
 	db            *sql.DB
 	queries       *database.Queries
+	log           logger.Logger
 }
 
-func (hnd *Handler) StaticFiles(logger Logger) http.Handler {
-	if Profile == "local" {
-		logger.Info("serving static files from local directory")
+func (hnd *Handler) StaticFiles() http.Handler {
+	if hnd.config.App.Env == config.Local {
+		hnd.log.Info("serving static files from local directory")
 		return http.StripPrefix("/static", http.FileServer(http.Dir("static")))
 	}
 
-	logger.Info("serving static files from embedded FS")
+	hnd.log.Info("serving static files from embedded FS")
 	return http.StripPrefix("/", http.FileServer(http.FS(staticFS)))
 }
 
@@ -44,7 +47,7 @@ func (hnd *Handler) LoginView(w http.ResponseWriter, r *http.Request) {
 	Render(w, r, views.Login())
 }
 
-func (hnd *Handler) AddEmailToMailingList(ctx context.Context, logger Logger, w http.ResponseWriter, r *http.Request) error {
+func (hnd *Handler) AddEmailToMailingList(w http.ResponseWriter, r *http.Request) error {
 	err := r.ParseForm()
 	if err != nil {
 		AddToast(w, ErrorInternalServerError(ErrParsingFrom))
@@ -80,7 +83,7 @@ func (hnd *Handler) AddEmailToMailingList(ctx context.Context, logger Logger, w 
 	}
 
 	output, err := hnd.queries.AddEmailToMailingList(
-		ctx,
+		r.Context(),
 		database.AddEmailToMailingListParams{
 			ID:    int64(snowflake.ID()),
 			Email: input.Email,
@@ -99,7 +102,7 @@ func (hnd *Handler) AddEmailToMailingList(ctx context.Context, logger Logger, w 
 		AddToast(w, ErrorInternalServerError(ErrFailedToAddEmailToMailingList))
 		return Render(w, r, components.PublicMailingListForm(components.PublicMailingListFormInput{}))
 	}
-	logger.Info("email %s was added to the mailing list", output.Email)
+	hnd.log.Info("email %s was added to the mailing list", output.Email)
 
 	AddToast(w, SuccessStatusCreated(SuccEmailAddedToMailingList))
 	return Render(w, r, components.PublicMailingListForm(components.PublicMailingListFormInput{}))

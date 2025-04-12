@@ -6,7 +6,7 @@ RUN sqlc generate
 RUN templ generate
 RUN go mod tidy
 RUN go mod vendor
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -tags prod -o bin/main .
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o bin/main .
 
 FROM gcr.io/distroless/base-debian12 AS run-stage
 COPY --from=build-stage /app/sql/migrations /sql/migrations

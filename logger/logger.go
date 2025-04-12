@@ -1,10 +1,11 @@
-package main
+package logger
 
 import (
 	"fmt"
 	"os"
 	"time"
 
+	"github.com/ip812/go-template/config"
 	"github.com/rs/zerolog"
 )
 
@@ -15,9 +16,9 @@ type Logger interface {
 	Error(msg string, args ...interface{})
 }
 
-func NewLogger() Logger {
+func New(cfg *config.Config) Logger {
 	var log zerolog.Logger
-	if Profile == "local" {
+	if cfg.App.Env == "local" {
 		log = zerolog.New(zerolog.ConsoleWriter{
 			Out:        os.Stdout,
 			TimeFormat: time.RFC3339,

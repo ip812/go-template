@@ -15,19 +15,21 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/pressly/goose/v3"
 
+	"github.com/ip812/go-template/config"
 	"github.com/ip812/go-template/database"
+	"github.com/ip812/go-template/logger"
 )
 
 func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	logger := NewLogger()
-	cfg := NewConfig()
+	cfg := config.New()
+	log := logger.New(cfg)
 
-	snowflake.SetMachineID(1)
 	// https://snowsta.mp
 	snowflake.SetStartTime(time.Date(2015, 1, 1, 0, 0, 0, 0, time.UTC))
+	snowflake.SetMachineID(1)
 
 	dbUrl := fmt.Sprintf(
 		"postgres://%s:%s@%s/%s?sslmode=%s",
@@ -39,30 +41,32 @@ func main() {
 	)
 	db, err := sql.Open("postgres", dbUrl)
 	if err != nil {
-		logger.Error("failed to connect to database: %s", err.Error())
+		log.Error("failed to connect to database: %s", err.Error())
 	}
 	defer db.Close()
 	queries := database.New(db)
 
 	if err := goose.SetDialect("postgres"); err != nil {
-		logger.Error("failed to set dialect: %s", err.Error())
+		log.Error("failed to set dialect: %s", err.Error())
 	}
 	if err := goose.Up(db, "sql/migrations"); err != nil {
-		logger.Error("failed to run migrations: %s", err.Error())
+		log.Error("failed to run migrations: %s", err.Error())
 	}
 
 	formDecoder := form.NewDecoder()
 	formValidator := validator.New(validator.WithRequiredStructEnabled())
 
 	hnd := Handler{
+		config:        cfg,
 		formDecoder:   formDecoder,
 		formValidator: formValidator,
 		db:            db,
 		queries:       queries,
+		log:           log,
 	}
 
 	mux := chi.NewRouter()
-	mux.Handle("/static/*", hnd.StaticFiles(logger))
+	mux.Handle("/static/*", hnd.StaticFiles())
 	mux.With().Route("/p", func(mux chi.Router) {
 		mux.Route("/public", func(mux chi.Router) {
 			mux.Get("/home", hnd.HomeView)
@@ -78,7 +82,7 @@ func main() {
 	mux.Route("/api", func(mux chi.Router) {
 		mux.Route("/public/v0", func(mux chi.Router) {
 			mux.Route("/mailing-list", func(mux chi.Router) {
-				mux.Post("/", MakeTemplHandler(ctx, logger, hnd.AddEmailToMailingList))
+				mux.Post("/", MakeTemplHandler(hnd.AddEmailToMailingList))
 			})
 		})
 		mux.Route("/client/v0", func(mux chi.Router) {
@@ -98,8 +102,8 @@ func main() {
 		WriteTimeout: 30 * time.Second,
 		Handler:      mux,
 	}
-	logger.Info("server started on %s", cfg.App.Port)
+	log.Info("server started on %s", cfg.App.Port)
 	if err := server.ListenAndServe(); err != nil {
-		logger.Error("cannot start server: %s", err.Error())
+		log.Error("cannot start server: %s", err.Error())
 	}
 }

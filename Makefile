@@ -28,5 +28,5 @@ update-deps:
 	@go mod vendor
 
 vuln-check:
-	@govulncheck -tags=prod -show verbose ./...
+	@govulncheck -show verbose ./...
 
