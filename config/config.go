@@ -50,7 +50,7 @@ func New() *Config {
 
 	cfg.App.Env = Environment(os.Getenv("APP_ENV"))
 	if !cfg.App.Env.IsValid() {
-		cfg.App.Env = Local
+		cfg.App.Env = Prod
 	}
 
 	err := godotenv.Load()
