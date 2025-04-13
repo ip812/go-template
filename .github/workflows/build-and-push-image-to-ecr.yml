@@ -46,37 +46,3 @@ jobs:
 
         echo "Pushing image to ECR..."
         docker push 678468774710.dkr.ecr.eu-central-1.amazonaws.com/ip812/go-template:${{ env.TAG }}
-
-  trigger-update-service:
-    runs-on: ubuntu-24.04
-    needs: build-and-push-image-to-ecr
-    permissions:
-      contents: read
-
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-
-    - name: Extract tag
-      run: |
-        TAG=${GITHUB_REF#refs/tags/}
-        if [[ -z "$TAG" ]]; then
-          echo "Failed to extract TAG from GITHUB_REF"
-          exit 1
-        fi
-        echo "TAG=$TAG" >> $GITHUB_ENV
-        echo "Extracted TAG: $TAG"
-
-    - name: Trigger update service 
-      uses: peter-evans/repository-dispatch@v2
-      with:
-        token: ${{ secrets.GH_ACCESS_TOKEN }}
-        repository: "ip812/apps"
-        event-type: update-service-trigger
-        client-payload: |
-          {
-            "image_name": "678468774710.dkr.ecr.eu-central-1.amazonaws.com/ip812/go-template",
-            "image_tag": "${{ env.TAG }}",
-            "commit_url": "https://github.com/${{ github.repository }}/commit/${{ github.sha }}"
-          }
-
