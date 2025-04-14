@@ -32,7 +32,6 @@ type Config struct {
 	Database struct {
 		Name     string
 		Endpoint string
-		Port     string
 		SSLMode  string
 		Username string
 		Password string
