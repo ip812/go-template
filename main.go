@@ -40,6 +40,7 @@ func main() {
 		log.Error("failed to connect to database: %s", err.Error())
 	}
 	defer db.Close()
+	db.SetMaxOpenConns(10)
 	queries := database.New(db)
 
 	if err := goose.SetDialect("postgres"); err != nil {
