@@ -29,9 +29,16 @@ jobs:
     - name: Login to ECR
       uses: jwalton/gh-ecr-login@v3
       with:
-        region: ${{ secrets.AWS_REGION }}
         access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        region: ${{ secrets.AWS_REGION }}
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_REGION }}
 
     - name: Build image
       run: |
@@ -39,8 +46,8 @@ jobs:
 
     - name: Check if image exists
       run: |
-        if ! aws ecr describe-repositories --repository-name 678468774710.dkr.ecr.eu-central-1.amazonaws.com/ip812/go-template --region ${{ secrets.AWS_REGION }} 2> /dev/null; then
-          aws ecr create-repository --repository-name 678468774710.dkr.ecr.eu-central-1.amazonaws.com/ip812/go-template --region ${{ secrets.AWS_REGION }} --image-tag-mutability IMMUTABLE
+        if ! aws ecr describe-repositories --repository-name 678468774710.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/ip812/go-template --region ${{ secrets.AWS_REGION }} 2> /dev/null; then
+          aws ecr create-repository --repository-name 678468774710.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/ip812/go-template --region ${{ secrets.AWS_REGION }} --image-tag-mutability IMMUTABLE
         fi
 
     - name: Tag and Push to ECR
