@@ -37,6 +37,12 @@ jobs:
       run: |
         docker build -t ip812/go-template:${{ env.TAG }} .
 
+    - name: Check if image exists
+      run: |
+        if ! aws ecr describe-repositories --repository-name 678468774710.dkr.ecr.eu-central-1.amazonaws.com/ip812/go-template --region ${{ secrets.AWS_REGION }} 2> /dev/null; then
+          aws ecr create-repository --repository-name 678468774710.dkr.ecr.eu-central-1.amazonaws.com/ip812/go-template --region ${{ secrets.AWS_REGION }} --image-tag-mutability IMMUTABLE
+        fi
+
     - name: Tag and Push to ECR
       run: |
         set -e
