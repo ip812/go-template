@@ -46,3 +46,21 @@ jobs:
 
         echo "Pushing image to ECR..."
         docker push 678468774710.dkr.ecr.eu-central-1.amazonaws.com/ip812/go-template:${{ env.TAG }}
+
+  update-image:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Trigger update image
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.GH_ACCESS_TOKEN }}
+          repository: "ip812/infra"
+          event-type: update-image
+          client-payload: |
+            {
+              "image_name": "678468774710.dkr.ecr.eu-central-1.amazonaws.com/ip812/go-template",
+              "image_tag": "${{ github.ref_name }}",
+              "commit_url": "https://github.com/${{ github.repository }}/commit/${{ github.sha }}"
+            }
