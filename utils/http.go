@@ -1,4 +1,4 @@
-package main
+package utils
 
 import (
 	"errors"
@@ -6,21 +6,15 @@ import (
 	"net/http"
 
 	"github.com/a-h/templ"
+	"github.com/ip812/go-template/status"
 )
-
-// We use Cloudflare tunnels & Traefik proxy in front of the app
-// The real user ip address is set to Cf-Connecting-Ip header
-// The r.RemoteAddr gets back the ip of Traefik
-func RealUserIP(r *http.Request) string {
-	return r.Header.Get("Cf-Connecting-Ip")
-}
 
 func Render(w http.ResponseWriter, r *http.Request, c templ.Component) error {
 	w.Header().Set("Content-Type", "text/html")
 
 	err := c.Render(r.Context(), w)
 	if err != nil {
-		return ErrorInternalServerError(fmt.Errorf("server failed to render this component"))
+		return status.ErrorInternalServerError(fmt.Errorf("server failed to render this component"))
 	}
 
 	return nil
@@ -29,9 +23,9 @@ func Render(w http.ResponseWriter, r *http.Request, c templ.Component) error {
 func MakeTemplHandler(f func(w http.ResponseWriter, r *http.Request) error) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if err := f(w, r); err != nil {
-			var t Toast
+			var t status.Toast
 			if errors.As(err, &t) {
-				AddToast(w, t)
+				status.AddToast(w, t)
 			}
 		}
 	}

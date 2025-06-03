@@ -17,6 +17,7 @@ import (
 	"github.com/ip812/go-template/config"
 	"github.com/ip812/go-template/database"
 	"github.com/ip812/go-template/logger"
+	"github.com/ip812/go-template/utils"
 )
 
 func main() {
@@ -79,7 +80,7 @@ func main() {
 	mux.Route("/api", func(mux chi.Router) {
 		mux.Route("/public/v0", func(mux chi.Router) {
 			mux.Route("/mailing-list", func(mux chi.Router) {
-				mux.Post("/", MakeTemplHandler(hnd.AddEmailToMailingList))
+				mux.Post("/", utils.MakeTemplHandler(hnd.AddEmailToMailingList))
 			})
 		})
 		mux.Route("/client/v0", func(mux chi.Router) {

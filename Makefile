@@ -17,9 +17,9 @@ fmt:
 	@find . -path ./vendor -prune -o -name '*.sql' -exec pg_format -i {} +
 
 update-deps:
-	@curl -sL https://github.com/tailwindlabs/tailwindcss/releases/tag/v4.1.8/download/tailwindcss-linux-x64 -o bin/tailwindcss-linux-x64
+	@curl -sL https://github.com/tailwindlabs/tailwindcss/releases/download/v4.1.8/tailwindcss-linux-x64 -o bin/tailwindcss-linux-x64
 	@chmod +x bin/tailwindcss-linux-x64
-	@curl -sL https://github.com/tailwindlabs/tailwindcss/releases/tag/v4.1.8/download/tailwindcss-macos-arm64 -o bin/tailwindcss-macos-arm64
+	@curl -sL https://github.com/tailwindlabs/tailwindcss/releases/download/v4.1.8/tailwindcss-macos-arm64 -o bin/tailwindcss-macos-arm64
 	@chmod +x bin/tailwindcss-macos-arm64
 	@curl -sL https://unpkg.com/htmx.org@2.0.3/dist/htmx.min.js -o static/js/htmx.min.js
 	@curl -sL https://cdn.jsdelivr.net/npm/alpinejs@3.14.3/dist/cdn.min.js -o static/js/alpine.min.js

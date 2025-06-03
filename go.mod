@@ -3,6 +3,7 @@ module github.com/ip812/go-template
 go 1.24.3
 
 require (
+	github.com/Oudwins/tailwind-merge-go v0.2.1
 	github.com/a-h/templ v0.3.887
 	github.com/go-chi/chi/v5 v5.2.1
 	github.com/go-playground/form v3.1.4+incompatible

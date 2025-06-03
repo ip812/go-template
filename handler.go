@@ -12,8 +12,10 @@ import (
 	"github.com/ip812/go-template/config"
 	"github.com/ip812/go-template/database"
 	"github.com/ip812/go-template/logger"
+	"github.com/ip812/go-template/status"
 	"github.com/ip812/go-template/templates/components"
 	"github.com/ip812/go-template/templates/views"
+	"github.com/ip812/go-template/utils"
 	"github.com/lib/pq"
 )
 
@@ -40,43 +42,43 @@ func (hnd *Handler) StaticFiles() http.Handler {
 }
 
 func (hnd *Handler) HomeView(w http.ResponseWriter, r *http.Request) {
-	Render(w, r, views.PublicHome())
+	utils.Render(w, r, views.PublicHome())
 }
 
 func (hnd *Handler) LoginView(w http.ResponseWriter, r *http.Request) {
-	Render(w, r, views.Login())
+	utils.Render(w, r, views.Login())
 }
 
 func (hnd *Handler) AddEmailToMailingList(w http.ResponseWriter, r *http.Request) error {
 	err := r.ParseForm()
 	if err != nil {
-		AddToast(w, ErrorInternalServerError(ErrParsingFrom))
-		return Render(w, r, components.PublicMailingListForm(components.PublicMailingListFormInput{}))
+		status.AddToast(w, status.ErrorInternalServerError(status.ErrParsingFrom))
+		return utils.Render(w, r, components.PublicMailingListForm(components.PublicMailingListFormInput{}))
 	}
 	var input components.PublicMailingListFormInput
 	err = hnd.formDecoder.Decode(&input, r.Form)
 	if err != nil {
-		AddToast(w, ErrorInternalServerError(ErrDecodingForm))
-		return Render(w, r, components.PublicMailingListForm(components.PublicMailingListFormInput{}))
+		status.AddToast(w, status.ErrorInternalServerError(status.ErrDecodingForm))
+		return utils.Render(w, r, components.PublicMailingListForm(components.PublicMailingListFormInput{}))
 	}
 
 	err = hnd.formValidator.Struct(input)
 	if err != nil {
 		if _, ok := err.(*validator.InvalidValidationError); ok {
 
-			AddToast(w, ErrorInternalServerError(ErrFailedtoValidateRequest))
-			return Render(w, r, components.PublicMailingListForm(components.PublicMailingListFormInput{}))
+			status.AddToast(w, status.ErrorInternalServerError(status.ErrFailedtoValidateRequest))
+			return utils.Render(w, r, components.PublicMailingListForm(components.PublicMailingListFormInput{}))
 		}
 
 		for _, err := range err.(validator.ValidationErrors) {
 			switch err.Field() {
 			case "Email":
 				if err.Tag() == "required" {
-					AddToast(w, WarningStatusBadRequest(WarnEmailIsRequred))
-					return Render(w, r, components.PublicMailingListForm(components.PublicMailingListFormInput{Email: input.Email}))
+					status.AddToast(w, status.WarningStatusBadRequest(status.WarnEmailIsRequred))
+					return utils.Render(w, r, components.PublicMailingListForm(components.PublicMailingListFormInput{Email: input.Email}))
 				} else if err.Tag() == "email" {
-					AddToast(w, WarningStatusBadRequest(WarnInvalidEmailFormat))
-					return Render(w, r, components.PublicMailingListForm(components.PublicMailingListFormInput{Email: input.Email}))
+					status.AddToast(w, status.WarningStatusBadRequest(status.WarnInvalidEmailFormat))
+					return utils.Render(w, r, components.PublicMailingListForm(components.PublicMailingListFormInput{Email: input.Email}))
 				}
 			}
 		}
@@ -94,18 +96,18 @@ func (hnd *Handler) AddEmailToMailingList(w http.ResponseWriter, r *http.Request
 		ok := errors.As(err, &pgErr)
 		if ok {
 			if pgErr.Code == "23505" {
-				AddToast(w, WarningStatusBadRequest(WarnEmailAlreadyExists))
-				return Render(w, r, components.PublicMailingListForm(components.PublicMailingListFormInput{}))
+				status.AddToast(w, status.WarningStatusBadRequest(status.WarnEmailAlreadyExists))
+				return utils.Render(w, r, components.PublicMailingListForm(components.PublicMailingListFormInput{}))
 			}
 		}
 
-		AddToast(w, ErrorInternalServerError(ErrFailedToAddEmailToMailingList))
-		return Render(w, r, components.PublicMailingListForm(components.PublicMailingListFormInput{}))
+		status.AddToast(w, status.ErrorInternalServerError(status.ErrFailedToAddEmailToMailingList))
+		return utils.Render(w, r, components.PublicMailingListForm(components.PublicMailingListFormInput{}))
 	}
 	hnd.log.Info("email %s was added to the mailing list", output.Email)
 
-	AddToast(w, SuccessStatusCreated(SuccEmailAddedToMailingList))
-	return Render(w, r, components.PublicMailingListForm(components.PublicMailingListFormInput{}))
+	status.AddToast(w, status.SuccessStatusCreated(status.SuccEmailAddedToMailingList))
+	return utils.Render(w, r, components.PublicMailingListForm(components.PublicMailingListFormInput{}))
 }
 
 func (hnd *Handler) Healthz(w http.ResponseWriter, r *http.Request) {
