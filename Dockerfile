@@ -3,7 +3,7 @@ WORKDIR /app
 COPY . .
 RUN go install github.com/sqlc-dev/sqlc/cmd/sqlc@v1.29.0
 RUN go install github.com/a-h/templ/cmd/templ@v0.3.887
-RUN ./bin/tailwindcss-extra-linux-x64 -i ./static/css/input.css -o ./static/css/output.css --minify
+RUN ./bin/tailwindcss-linux-x64 -i ./static/css/input.css -o ./static/css/output.css --minify
 RUN sqlc generate
 RUN templ generate
 RUN go mod tidy
