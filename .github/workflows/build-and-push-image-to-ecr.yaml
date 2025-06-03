@@ -26,6 +26,11 @@ jobs:
         echo "TAG=$TAG" >> $GITHUB_ENV
         echo "Extracted TAG: $TAG"
 
+    - name: Set up Git LFS
+      run: |
+        git lfs install
+        git lfs pull
+
     - name: Login to ECR
       uses: jwalton/gh-ecr-login@v3
       with:
