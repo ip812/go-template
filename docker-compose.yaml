@@ -4,7 +4,7 @@ services:
     image: postgres:15
     container_name: go_template_postgres
     environment:
-      POSTGRES_DB: go-template
+      POSTGRES_DB: template
       POSTGRES_USER: user
       POSTGRES_PASSWORD: pass
     ports:
