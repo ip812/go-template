@@ -30,7 +30,7 @@ jobs:
 
     - name: Build image
       run: |
-        docker build -t iypetrov/go-tempate:${{ github.ref_name }} .
+        docker build -t iypetrov/go-template:${{ github.ref_name }} .
 
     - name: Tag & Push to GHCR
       run: |
