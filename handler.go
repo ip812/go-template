@@ -84,6 +84,11 @@ func (hnd *Handler) AddEmailToMailingList(w http.ResponseWriter, r *http.Request
 		}
 	}
 
+	if hnd.queries == nil {
+		status.AddToast(w, status.ErrorInternalServerError(status.ErrQueriesNotInitialized))
+		return utils.Render(w, r, components.PublicMailingListForm(components.PublicMailingListFormInput{}))
+	}
+
 	output, err := hnd.queries.AddEmailToMailingList(
 		r.Context(),
 		database.AddEmailToMailingListParams{
