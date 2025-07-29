@@ -47,7 +47,7 @@ type Config struct {
 func New() *Config {
 	cfg := &Config{}
 
-	cfg.App.Env = Environment(os.Getenv("APP_ENV"))
+	cfg.App.Env = env
 	if !cfg.App.Env.IsValid() {
 		cfg.App.Env = Prod
 	}
