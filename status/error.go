@@ -6,7 +6,7 @@ import (
 )
 
 var (
-	ErrQueriesNotInitialized         = fmt.Errorf("queries not initialized")
+	ErrDatabaseNotReady              = fmt.Errorf("database not initialized")
 	ErrParsingFrom                   = fmt.Errorf("failed to parse a form")
 	ErrDecodingForm                  = fmt.Errorf("failed to decode a form")
 	ErrFailedtoValidateRequest       = fmt.Errorf("failed to validate a request")

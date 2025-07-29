@@ -1,7 +1,6 @@
 package main
 
 import (
-	"database/sql"
 	"embed"
 	"errors"
 	"net/http"
@@ -26,9 +25,9 @@ type Handler struct {
 	config        *config.Config
 	formDecoder   *form.Decoder
 	formValidator *validator.Validate
-	db            *sql.DB
-	queries       *database.Queries
 	log           logger.Logger
+
+	db DBWrapper
 }
 
 func (hnd *Handler) StaticFiles() http.Handler {
@@ -50,6 +49,12 @@ func (hnd *Handler) LoginView(w http.ResponseWriter, r *http.Request) {
 }
 
 func (hnd *Handler) AddEmailToMailingList(w http.ResponseWriter, r *http.Request) error {
+	queries := hnd.db.Queries()
+	if queries == nil {
+		status.AddToast(w, status.ErrorInternalServerError(status.ErrDatabaseNotReady))
+		return utils.Render(w, r, components.PublicMailingListForm(components.PublicMailingListFormInput{}))
+	}
+
 	err := r.ParseForm()
 	if err != nil {
 		status.AddToast(w, status.ErrorInternalServerError(status.ErrParsingFrom))
@@ -84,12 +89,7 @@ func (hnd *Handler) AddEmailToMailingList(w http.ResponseWriter, r *http.Request
 		}
 	}
 
-	if hnd.queries == nil {
-		status.AddToast(w, status.ErrorInternalServerError(status.ErrQueriesNotInitialized))
-		return utils.Render(w, r, components.PublicMailingListForm(components.PublicMailingListFormInput{}))
-	}
-
-	output, err := hnd.queries.AddEmailToMailingList(
+	output, err := queries.AddEmailToMailingList(
 		r.Context(),
 		database.AddEmailToMailingListParams{
 			ID:    int64(snowflake.ID()),

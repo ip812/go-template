@@ -32,9 +32,6 @@ const (
 	serverReadTimeout     = 10 * time.Second
 	serverWriteTimeout    = 30 * time.Second
 	serverShutdownTimeout = 10 * time.Second
-	snowflakeEpoch        = "2015-01-01T00:00:00Z"
-	snowflakeMachineID    = 1
-	migrationDir          = "sql/migrations"
 )
 
 func main() {
@@ -45,14 +42,13 @@ func main() {
 	log := logger.New(cfg)
 
 	// https://snowsta.mp
-	startTime, _ := time.Parse(time.RFC3339, snowflakeEpoch)
+	startTime, _ := time.Parse(time.RFC3339, "2015-01-01T00:00:00Z")
 	snowflake.SetStartTime(startTime)
-	snowflake.SetMachineID(snowflakeMachineID)
+	snowflake.SetMachineID(1)
 
-	var db *sql.DB
-	var queries *database.Queries
+	swappableDB := NewSwappableDB()
 
-	server := startHTTPServer(cfg, log, db, queries)
+	server := startHTTPServer(cfg, log, swappableDB)
 
 	db, queries, err := connectToDatabaseWithRetry(ctx, cfg, log)
 	if err != nil {
@@ -61,10 +57,12 @@ func main() {
 	}
 	defer db.Close()
 
+	swappableDB.Swap(db, queries)
+
 	if err := goose.SetDialect("postgres"); err != nil {
 		log.Error("failed to set dialect: %s", err.Error())
 	}
-	if err := goose.Up(db, migrationDir); err != nil {
+	if err := goose.Up(db, "sql/migrations"); err != nil {
 		log.Error("failed to run migrations: %s", err.Error())
 	}
 
@@ -97,7 +95,7 @@ func connectToDatabaseWithRetry(ctx context.Context, cfg *config.Config, log log
 		cfg.Database.SSLMode,
 	)
 
-	retryOperation := func() (dbConnection, error) {
+	operation := func() (dbConnection, error) {
 		connCtx, cancel := context.WithTimeout(ctx, dbConnectTimeout)
 		defer cancel()
 
@@ -122,14 +120,14 @@ func connectToDatabaseWithRetry(ctx context.Context, cfg *config.Config, log log
 
 	_, err := backoff.Retry[dbConnection](
 		ctx,
-		retryOperation,
+		operation,
 		backoff.WithMaxElapsedTime(retryMaxElapsedTime),
 	)
 
 	return conn.db, conn.queries, err
 }
 
-func startHTTPServer(cfg *config.Config, log logger.Logger, db *sql.DB, queries *database.Queries) *http.Server {
+func startHTTPServer(cfg *config.Config, log logger.Logger, db DBWrapper) *http.Server {
 	formDecoder := form.NewDecoder()
 	formValidator := validator.New(validator.WithRequiredStructEnabled())
 
@@ -138,7 +136,6 @@ func startHTTPServer(cfg *config.Config, log logger.Logger, db *sql.DB, queries 
 		formDecoder:   formDecoder,
 		formValidator: formValidator,
 		db:            db,
-		queries:       queries,
 		log:           log,
 	}
 
