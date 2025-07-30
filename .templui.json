@@ -2,5 +2,6 @@
   "componentsDir": "templates",
   "utilsDir": "utils",
   "moduleName": "github.com/ip812/go-template",
-  "jsDir": "static/js"
+  "jsDir": "static/js",
+  "jsPublicPath": "/static/js"
 }
