@@ -143,8 +143,7 @@ func startHTTPServer(cfg *config.Config, log logger.Logger, db DBWrapper) *http.
 	mux.Handle("/static/*", handler.StaticFiles())
 	mux.With().Route("/p", func(mux chi.Router) {
 		mux.Route("/public", func(mux chi.Router) {
-			mux.Get("/home", handler.HomeView)
-			mux.Get("/login", handler.LoginView)
+			mux.Get("/home", handler.LandingPageView)
 		})
 	})
 
@@ -157,7 +156,7 @@ func startHTTPServer(cfg *config.Config, log logger.Logger, db DBWrapper) *http.
 	})
 
 	mux.Get("/healthz", handler.Healthz)
-	mux.NotFound(handler.HomeRedirect)
+	mux.NotFound(handler.LandingPageRedirect)
 
 	server := &http.Server{
 		Addr:         fmt.Sprintf(":%s", cfg.App.Port),

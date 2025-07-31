@@ -37,8 +37,12 @@ update-deps:
 	@echo "Updated htmx.min.js"
 	@curl -sL https://cdn.jsdelivr.net/npm/alpinejs@3.14.3/dist/cdn.min.js -o static/js/alpine.min.js
 	@echo "Updated alpine.min.js"
+	@templui -f init
+	@echo "Updated templui"
 	@go get -u
+	@echo "Updated Go dependencies"
 	@go mod tidy
+	@echo "Go modules tidied"
 	@echo "Dependencies updated successfully."
 
 vuln-check:

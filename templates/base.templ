@@ -1,5 +1,10 @@
 package templates
 
+import (
+    "github.com/ip812/go-template/templates/input"
+    "github.com/ip812/go-template/templates/label"
+)
+
 templ Base() {
 	<!DOCTYPE html>
 	<html lang="en">
@@ -15,6 +20,8 @@ templ Base() {
 			<script src="https://js.stripe.com/v3/"></script>
 		</head>
 		<body>
+            @input.Script()
+            @label.Script()
 			@Toast()
 			<div class="relative md:flex font-primary w-screen min-h-screen">
 				{ children... }
