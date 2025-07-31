@@ -10,6 +10,7 @@ import (
 type DBWrapper interface {
 	Queries() *database.Queries
 	DB() *sql.DB
+	IsReady() bool
 }
 
 type SwappableDB struct {
@@ -47,4 +48,10 @@ func (s *SwappableDB) DB() *sql.DB {
 		return nil
 	}
 	return s.db
+}
+
+func (s *SwappableDB) IsReady() bool {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.ready
 }
