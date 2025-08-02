@@ -1,5 +1,5 @@
 ---
-name: Build and push image to ECR
+name: Build and push images
 on:
   push:
     tags:
