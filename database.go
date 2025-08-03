@@ -5,12 +5,12 @@ import (
 	"sync"
 
 	"github.com/ip812/go-template/database"
+	"github.com/ip812/go-template/status"
 )
 
 type DBWrapper interface {
-	Queries() *database.Queries
-	DB() *sql.DB
-	IsReady() bool
+	Queries() (*database.Queries, error)
+	DB() (*sql.DB, error)
 }
 
 type SwappableDB struct {
@@ -32,26 +32,20 @@ func (s *SwappableDB) Swap(db *sql.DB, queries *database.Queries) {
 	s.ready = true
 }
 
-func (s *SwappableDB) Queries() *database.Queries {
+func (s *SwappableDB) Queries() (*database.Queries, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	if !s.ready {
-		return nil
+		return nil, status.ErrDatabaseNotReady
 	}
-	return s.q
+	return s.q, nil
 }
 
-func (s *SwappableDB) DB() *sql.DB {
+func (s *SwappableDB) DB() (*sql.DB, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	if !s.ready {
-		return nil
+		return nil, status.ErrDatabaseNotReady
 	}
-	return s.db
-}
-
-func (s *SwappableDB) IsReady() bool {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-	return s.ready
+	return s.db, nil
 }

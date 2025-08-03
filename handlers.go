@@ -45,14 +45,13 @@ func (hnd *Handler) LandingPageView(w http.ResponseWriter, r *http.Request) {
 }
 
 func (hnd *Handler) AddEmailToMailingList(w http.ResponseWriter, r *http.Request) error {
-	if hnd.db.IsReady() == false {
-		status.AddToast(w, status.ErrorInternalServerError(status.ErrDatabaseNotReady))
+	queries, err := hnd.db.Queries()
+	if err != nil {
+		status.AddToast(w, status.ErrorInternalServerError(err))
 		return utils.Render(w, r, components.MailingListForm(components.MailingListFormProps{}))
 	}
 
-	queries := hnd.db.Queries()
-
-	err := r.ParseForm()
+	err = r.ParseForm()
 	if err != nil {
 		status.AddToast(w, status.ErrorInternalServerError(status.ErrParsingFrom))
 		return utils.Render(w, r, components.MailingListForm(components.MailingListFormProps{}))
