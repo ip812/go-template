@@ -29,6 +29,10 @@ type Config struct {
 		Port   string
 	}
 
+	Otel struct {
+		Endpoint string
+	}
+
 	Database struct {
 		Name     string
 		Endpoint string
@@ -59,6 +63,7 @@ func New() *Config {
 
 	cfg.App.Domain = os.Getenv("APP_DOMAIN")
 	cfg.App.Port = os.Getenv("APP_PORT")
+	cfg.Otel.Endpoint = os.Getenv("OTEL_ENDPOINT")
 	cfg.Database.Name = os.Getenv("DB_NAME")
 	cfg.Database.Endpoint = os.Getenv("DB_ENDPOINT")
 	cfg.Database.SSLMode = os.Getenv("DB_SSL_MODE")

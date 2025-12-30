@@ -17,6 +17,13 @@ import (
 	"github.com/godruoyi/go-snowflake"
 	_ "github.com/lib/pq"
 	"github.com/pressly/goose/v3"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
+	"go.opentelemetry.io/otel/sdk/resource"
+	"go.opentelemetry.io/otel/sdk/trace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.15.0"
 
 	"github.com/ip812/go-template/config"
 	"github.com/ip812/go-template/database"
@@ -34,12 +41,62 @@ const (
 	serverShutdownTimeout = 10 * time.Second
 )
 
+func startTracing() (*trace.TracerProvider, error) {
+	serviceName := "go-template"
+	headers := map[string]string{
+		"content-type": "application/json",
+	}
+
+	exporter, err := otlptrace.New(
+		context.Background(),
+		otlptracehttp.NewClient(
+			otlptracehttp.WithEndpoint(config.New().Otel.Endpoint),
+			otlptracehttp.WithHeaders(headers),
+			otlptracehttp.WithInsecure(),
+		),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("creating new exporter: %w", err)
+	}
+
+	tracerprovider := trace.NewTracerProvider(
+		trace.WithBatcher(
+			exporter,
+			trace.WithMaxExportBatchSize(trace.DefaultMaxExportBatchSize),
+			trace.WithBatchTimeout(trace.DefaultScheduleDelay*time.Millisecond),
+			trace.WithMaxExportBatchSize(trace.DefaultMaxExportBatchSize),
+		),
+		trace.WithResource(
+			resource.NewWithAttributes(
+				semconv.SchemaURL,
+				semconv.ServiceNameKey.String(serviceName),
+				attribute.String("environment", string(config.New().App.Env)),
+			),
+		),
+	)
+
+	otel.SetTracerProvider(tracerprovider)
+
+	return tracerprovider, nil
+}
+
 func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
 	cfg := config.New()
 	log := logger.New(cfg)
+
+	traceProvider, err := startTracing()
+	if err != nil {
+		log.Error("traceprovider: %v", err)
+	}
+	defer func() {
+		if err := traceProvider.Shutdown(context.Background()); err != nil {
+			log.Error("traceprovider: %v", err)
+		}
+	}()
+	_ = traceProvider.Tracer("my-app")
 
 	// https://snowsta.mp
 	startTime, _ := time.Parse(time.RFC3339, "2015-01-01T00:00:00Z")
