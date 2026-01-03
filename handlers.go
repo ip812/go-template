@@ -16,6 +16,9 @@ import (
 	"github.com/ip812/go-template/templates/views"
 	"github.com/ip812/go-template/utils"
 	"github.com/lib/pq"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	oteltrace "go.opentelemetry.io/otel/trace"
 )
 
 //go:embed static
@@ -25,6 +28,7 @@ type Handler struct {
 	config        *config.Config
 	formDecoder   *form.Decoder
 	formValidator *validator.Validate
+	tracer        oteltrace.Tracer
 	log           logger.Logger
 
 	db DBWrapper
@@ -63,11 +67,19 @@ func (hnd *Handler) AddEmailToMailingList(w http.ResponseWriter, r *http.Request
 		return utils.Render(w, r, components.MailingListForm(components.MailingListFormProps{}))
 	}
 
+	_, span := hnd.tracer.Start(
+		r.Context(),
+		"AddEmailToMailingList",
+		oteltrace.WithAttributes(attribute.String("email", props.Email)),
+	)
+	defer span.End()
+
 	err = hnd.formValidator.Struct(props)
 	if err != nil {
 		if _, ok := err.(*validator.InvalidValidationError); ok {
-
 			status.AddToast(w, status.ErrorInternalServerError(status.ErrFailedtoValidateRequest))
+			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
 			return utils.Render(w, r, components.MailingListForm(components.MailingListFormProps{}))
 		}
 
@@ -76,9 +88,13 @@ func (hnd *Handler) AddEmailToMailingList(w http.ResponseWriter, r *http.Request
 			case "Email":
 				if err.Tag() == "required" {
 					status.AddToast(w, status.WarningStatusBadRequest(status.WarnEmailIsRequred))
+					span.RecordError(err)
+					span.SetStatus(codes.Error, err.Error())
 					return utils.Render(w, r, components.MailingListForm(components.MailingListFormProps{Email: props.Email}))
 				} else if err.Tag() == "email" {
 					status.AddToast(w, status.WarningStatusBadRequest(status.WarnInvalidEmailFormat))
+					span.RecordError(err)
+					span.SetStatus(codes.Error, err.Error())
 					return utils.Render(w, r, components.MailingListForm(components.MailingListFormProps{Email: props.Email}))
 				}
 			}
@@ -98,11 +114,15 @@ func (hnd *Handler) AddEmailToMailingList(w http.ResponseWriter, r *http.Request
 		if ok {
 			if pgErr.Code == "23505" {
 				status.AddToast(w, status.WarningStatusBadRequest(status.WarnEmailAlreadyExists))
+				span.RecordError(err)
+				span.SetStatus(codes.Error, err.Error())
 				return utils.Render(w, r, components.MailingListForm(components.MailingListFormProps{}))
 			}
 		}
 
 		status.AddToast(w, status.ErrorInternalServerError(status.ErrFailedToAddEmailToMailingList))
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
 		return utils.Render(w, r, components.MailingListForm(components.MailingListFormProps{}))
 	}
 	hnd.log.Info("email %s was added to the mailing list", output.Email)

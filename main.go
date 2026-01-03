@@ -10,6 +10,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/XSAM/otelsql"
+
 	"github.com/cenkalti/backoff/v5"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-playground/form"
@@ -17,14 +19,19 @@ import (
 	"github.com/godruoyi/go-snowflake"
 	_ "github.com/lib/pq"
 	"github.com/pressly/goose/v3"
+	"github.com/riandyrn/otelchi"
+	semconv "go.opentelemetry.io/otel/semconv/v1.30.0"
+	oteltrace "go.opentelemetry.io/otel/trace"
 
 	"github.com/ip812/go-template/config"
 	"github.com/ip812/go-template/database"
 	"github.com/ip812/go-template/logger"
+	"github.com/ip812/go-template/o11y"
 	"github.com/ip812/go-template/utils"
 )
 
 const (
+	serviceName           = "go-template"
 	dbConnectTimeout      = 10 * time.Second
 	dbMaxOpenConnections  = 10
 	retryMaxElapsedTime   = 15 * time.Minute
@@ -40,6 +47,10 @@ func main() {
 
 	cfg := config.New()
 	log := logger.New(cfg)
+	tracer, err := o11y.NewTracer(serviceName)
+	if err != nil {
+		log.Error("unable to initialize tracer due: %v", err)
+	}
 
 	// https://snowsta.mp
 	startTime, _ := time.Parse(time.RFC3339, "2015-01-01T00:00:00Z")
@@ -48,7 +59,7 @@ func main() {
 
 	swappableDB := NewSwappableDB()
 
-	server := startHTTPServer(cfg, log, swappableDB)
+	server := startHTTPServer(cfg, log, tracer, swappableDB)
 
 	db, queries, err := connectToDatabaseWithRetry(ctx, cfg, log)
 	if err != nil {
@@ -99,9 +110,26 @@ func connectToDatabaseWithRetry(ctx context.Context, cfg *config.Config, log log
 		connCtx, cancel := context.WithTimeout(ctx, dbConnectTimeout)
 		defer cancel()
 
-		db, err := sql.Open("postgres", connectionString)
+		db, err := otelsql.Open(
+			"postgres", 
+			connectionString, 
+			otelsql.WithAttributes(
+				semconv.DBSystemNamePostgreSQL,
+			),
+		)
 		if err != nil {
 			log.Warn("failed to open the database connection: %v", err.Error())
+			return conn, err
+		}
+
+		_, err = otelsql.RegisterDBStatsMetrics(
+			db, 
+			otelsql.WithAttributes(
+				semconv.DBSystemNamePostgreSQL,
+			),
+		)
+		if err != nil {
+			log.Warn("failed to register database metrics: %v", err.Error())
 			return conn, err
 		}
 
@@ -127,7 +155,12 @@ func connectToDatabaseWithRetry(ctx context.Context, cfg *config.Config, log log
 	return conn.db, conn.queries, err
 }
 
-func startHTTPServer(cfg *config.Config, log logger.Logger, db DBWrapper) *http.Server {
+func startHTTPServer(
+	cfg *config.Config,
+	log logger.Logger,
+	tracer oteltrace.Tracer,
+	db DBWrapper,
+) *http.Server {
 	formDecoder := form.NewDecoder()
 	formValidator := validator.New(validator.WithRequiredStructEnabled())
 
@@ -135,11 +168,13 @@ func startHTTPServer(cfg *config.Config, log logger.Logger, db DBWrapper) *http.
 		config:        cfg,
 		formDecoder:   formDecoder,
 		formValidator: formValidator,
+		tracer:        tracer,
 		db:            db,
 		log:           log,
 	}
 
 	mux := chi.NewRouter()
+	mux.Use(otelchi.Middleware(serviceName, otelchi.WithChiRoutes(mux)))
 	mux.Handle("/static/*", handler.StaticFiles())
 	mux.With().Route("/p", func(mux chi.Router) {
 		mux.Route("/public", func(mux chi.Router) {
