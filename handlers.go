@@ -16,9 +16,18 @@ import (
 	"github.com/ip812/go-template/templates/views"
 	"github.com/ip812/go-template/utils"
 	"github.com/lib/pq"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	oteltrace "go.opentelemetry.io/otel/trace"
+)
+
+var (
+        opsNewEmailProcessed = promauto.NewCounter(prometheus.CounterOpts{
+                Name: "go_template_new_emails_total",
+                Help: "The total number of new emails added to the mailing list",
+        })
 )
 
 //go:embed static
@@ -126,6 +135,7 @@ func (hnd *Handler) AddEmailToMailingList(w http.ResponseWriter, r *http.Request
 		return utils.Render(w, r, components.MailingListForm(components.MailingListFormProps{}))
 	}
 	hnd.log.Info("email %s was added to the mailing list", output.Email)
+	opsNewEmailProcessed.Inc()
 
 	status.AddToast(w, status.SuccessStatusCreated(status.SuccEmailAddedToMailingList))
 	return utils.Render(w, r, components.MailingListForm(components.MailingListFormProps{}))
