@@ -27,6 +27,7 @@ import (
 	"github.com/ip812/go-template/config"
 	"github.com/ip812/go-template/database"
 	"github.com/ip812/go-template/logger"
+	"github.com/ip812/go-template/middleware"
 	"github.com/ip812/go-template/o11y"
 	"github.com/ip812/go-template/utils"
 )
@@ -184,6 +185,7 @@ func startHTTPServer(
 
 	mux := chi.NewRouter()
 	mux.Use(otelchi.Middleware(serviceName, otelchi.WithChiRoutes(mux)))
+	mux.Use(middleware.TraceIDHeaderMiddleware)
 	mux.Handle("/static/*", handler.StaticFiles())
 	mux.With().Route("/p", func(mux chi.Router) {
 		mux.Route("/public", func(mux chi.Router) {
